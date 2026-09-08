@@ -93,31 +93,95 @@ export async function createProductController(request: NextRequest) {
   }
 }
 
-export async function getProductsController(request: NextRequest) {
+export async function getProductsController(
+  request: NextRequest,
+) {
   try {
-    const { organizationId } = await authenticateOrganization(request);
+    const { organizationId } =
+      await authenticateOrganization(request);
 
-    const products = await getProducts(organizationId);
+    const { searchParams } = new URL(request.url);
+
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+
+    const search =
+      searchParams.get("search") || undefined;
+
+    const category =
+      searchParams.get("category") || undefined;
+
+    const minPriceValue =
+      searchParams.get("minPrice");
+
+    const maxPriceValue =
+      searchParams.get("maxPrice");
+
+    const minPrice =
+      minPriceValue !== null
+        ? Number(minPriceValue)
+        : undefined;
+
+    const maxPrice =
+      maxPriceValue !== null
+        ? Number(maxPriceValue)
+        : undefined;
+
+    const stockStatus =
+      searchParams.get("stockStatus") as
+        | "inStock"
+        | "outOfStock"
+        | null;
+
+    const sortBy =
+      (searchParams.get("sortBy") as
+        | "createdAt"
+        | "name"
+        | "price"
+        | "stock") || "createdAt";
+
+    const sortOrder =
+      (searchParams.get("sortOrder") as
+        | "asc"
+        | "desc") || "desc";
+
+    const result = await getProducts(
+      organizationId,
+      {
+        page,
+        limit,
+        search,
+        category,
+        minPrice,
+        maxPrice,
+        stockStatus:
+          stockStatus || undefined,
+        sortBy,
+        sortOrder,
+      },
+    );
 
     return NextResponse.json(
       {
         success: true,
         message: "Products fetched successfully",
-        data: {
-          products,
-          count: products.length,
-        },
+        data: result,
       },
       { status: 200 },
     );
   } catch (error) {
-    console.error("Get Products Controller Error:", error);
+    console.error(
+      "Get Products Controller Error:",
+      error,
+    );
 
     return NextResponse.json(
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Something went wrong",
+          error instanceof Error
+            ? error.message
+            : "Something went wrong",
       },
       { status: 401 },
     );
