@@ -28,14 +28,112 @@ export async function createProduct(
 }
 
 // GET ALL PRODUCTS
-export async function getProducts(organizationId: string) {
-  const products = await Product.find({
-    organizationId,
-  }).sort({
-    createdAt: -1,
-  });
+export async function getProducts(
+  organizationId: string,
+  options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    stockStatus?: "inStock" | "outOfStock";
+    sortBy?: "createdAt" | "name" | "price" | "stock";
+    sortOrder?: "asc" | "desc";
+  },
+) {
+  const page = Math.max(options?.page || 1, 1);
+  const limit = Math.min(Math.max(options?.limit || 10, 1), 100);
 
-  return products;
+  const skip = (page - 1) * limit;
+
+  const filter: Record<string, any> = {
+    organizationId,
+    isActive: true,
+  };
+
+  // Search
+  if (options?.search) {
+    const search = options.search.trim();
+
+    filter.$or = [
+      {
+        name: {
+          $regex: search,
+          $options: "i",
+        },
+      },
+      {
+        sku: {
+          $regex: search,
+          $options: "i",
+        },
+      },
+    ];
+  }
+
+  // Category
+  if (options?.category) {
+    filter.category = options.category;
+  }
+
+  // Minimum price
+  if (options?.minPrice !== undefined) {
+    filter.price = {
+      ...filter.price,
+      $gte: options.minPrice,
+    };
+  }
+
+  // Maximum price
+  if (options?.maxPrice !== undefined) {
+    filter.price = {
+      ...filter.price,
+      $lte: options.maxPrice,
+    };
+  }
+
+  // Stock status
+  if (options?.stockStatus === "inStock") {
+    filter.stock = {
+      $gt: 0,
+    };
+  }
+
+  if (options?.stockStatus === "outOfStock") {
+    filter.stock = {
+      $eq: 0,
+    };
+  }
+
+  // Sorting
+  const sortBy = options?.sortBy || "createdAt";
+  const sortOrder = options?.sortOrder === "asc" ? 1 : -1;
+
+  const [products, totalProducts] = await Promise.all([
+    Product.find(filter)
+      .sort({
+        [sortBy]: sortOrder,
+      })
+      .skip(skip)
+      .limit(limit),
+
+    Product.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.ceil(totalProducts / limit);
+
+  return {
+    products,
+    pagination: {
+      page,
+      limit,
+      totalProducts,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  };
 }
 
 export async function getProductById(
@@ -45,6 +143,7 @@ export async function getProductById(
   const product = await Product.findOne({
     _id: productId,
     organizationId,
+    isActive: true,
   });
 
   if (!product) {
