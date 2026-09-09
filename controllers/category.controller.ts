@@ -1,264 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createProductSchema,
-  updateProductSchema,
-} from "@/validations/product.validation";
-
-import {
-  createProduct,
-  getProducts,
-  getProductById,
-  updateProduct,
-  deleteProduct,
-} from "@/services/product.service";
-
 import { authenticateOrganization } from "@/middleware/organization.middleware";
+import { createCategorySchema ,updateCategorySchema} from "@/validations/category.validation";
+import { createCategory ,getCategories,getCategoryById,updateCategory,deleteCategory} from "@/services/category.service";
 
-
-export async function createProductController(request: NextRequest) {
-  try {
-    // 1. Authenticate user + get organization
-    const { organizationId } = await authenticateOrganization(request);
-
-    // 2. Get request body
-    const body = await request.json();
-
-    // 3. Validate request body
-    const validation = createProductSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: validation.error.flatten().fieldErrors,
-        },
-        { status: 400 },
-      );
-    }
-
-    // 4. Create product
-    const product = await createProduct(validation.data, organizationId);
-
-    // 5. Response
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Product created successfully",
-        data: {
-          product,
-        },
-      },
-      { status: 201 },
-    );
-  } catch (error) {
-    console.error("Create Product Controller Error:", error);
-
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-
-    // Duplicate SKU
-    if (message.includes("A product with this SKU already exists")) {
-      return NextResponse.json(
-        {
-          success: false,
-          message,
-        },
-        { status: 409 },
-      );
-    }
-
-    // Authentication / organization errors
-    if (
-      message.includes("Authorization") ||
-      message.includes("Token") ||
-      message.includes("organization") ||
-      message.includes("Organization")
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message,
-        },
-        { status: 401 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      { status: 500 },
-    );
-  }
-}
-
-
-export async function getProductsController(
+export async function createCategoryController(
   request: NextRequest,
-) {
-  try {
-    const { organizationId } =
-      await authenticateOrganization(request);
-
-    const { searchParams } = new URL(request.url);
-
-    const page =
-      Number(searchParams.get("page")) || 1;
-
-    const limit =
-      Number(searchParams.get("limit")) || 10;
-
-    const search =
-      searchParams.get("search") || undefined;
-
-    // Category
-    const categoryId =
-      searchParams.get("categoryId") || undefined;
-
-    // Stock Status
-    const stockStatusParam =
-      searchParams.get("stockStatus");
-
-    const stockStatus =
-      stockStatusParam === "inStock" ||
-      stockStatusParam === "outOfStock"
-        ? stockStatusParam
-        : undefined;
-
-    // Sort By
-    const sortByParam =
-      searchParams.get("sortBy");
-
-    const sortBy =
-      sortByParam === "createdAt" ||
-      sortByParam === "name" ||
-      sortByParam === "price" ||
-      sortByParam === "stock"
-        ? sortByParam
-        : undefined;
-
-    // Sort Order
-    const sortOrderParam =
-      searchParams.get("sortOrder");
-
-    const sortOrder =
-      sortOrderParam === "asc" ||
-      sortOrderParam === "desc"
-        ? sortOrderParam
-        : undefined;
-
-    // Minimum Price
-    const minPriceValue =
-      searchParams.get("minPrice");
-
-    const minPrice =
-      minPriceValue !== null
-        ? Number(minPriceValue)
-        : undefined;
-
-    // Maximum Price
-    const maxPriceValue =
-      searchParams.get("maxPrice");
-
-    const maxPrice =
-      maxPriceValue !== null
-        ? Number(maxPriceValue)
-        : undefined;
-
-    // Get Products
-    const result = await getProducts(
-      organizationId,
-      {
-        page,
-        limit,
-        search,
-        categoryId,
-        minPrice,
-        maxPrice,
-        stockStatus,
-        sortBy,
-        sortOrder,
-      },
-    );
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Products fetched successfully",
-        data: result,
-      },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error(
-      "Get Products Controller Error:",
-      error,
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong",
-      },
-      { status: 401 },
-    );
-  }
-}
-
-
-export async function getProductByIdController(
-  request: NextRequest,
-  productId: string,
-) {
-  try {
-    const { organizationId } = await authenticateOrganization(request);
-
-    const product = await getProductById(productId, organizationId);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Product fetched successfully",
-        data: {
-          product,
-        },
-      },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Get Product By ID Controller Error:", error);
-
-    const message =
-      error instanceof Error ? error.message : "Something went wrong";
-
-    if (message === "Product not found") {
-      return NextResponse.json(
-        {
-          success: false,
-          message,
-        },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      { status: 401 },
-    );
-  }
-}
-
-export async function updateProductController(
-  request: NextRequest,
-  productId: string,
 ) {
   try {
     const { organizationId } =
@@ -266,21 +12,22 @@ export async function updateProductController(
 
     const body = await request.json();
 
-    const validation = updateProductSchema.safeParse(body);
+    const validation =
+      createCategorySchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
         {
           success: false,
           message: "Validation failed",
-          errors: validation.error.flatten().fieldErrors,
+          errors:
+            validation.error.flatten().fieldErrors,
         },
         { status: 400 },
       );
     }
 
-    const product = await updateProduct(
-      productId,
+    const category = await createCategory(
       validation.data,
       organizationId,
     );
@@ -288,16 +35,16 @@ export async function updateProductController(
     return NextResponse.json(
       {
         success: true,
-        message: "Product updated successfully",
+        message: "Category created successfully",
         data: {
-          product,
+          category,
         },
       },
-      { status: 200 },
+      { status: 201 },
     );
   } catch (error) {
     console.error(
-      "Update Product Controller Error:",
+      "Create Category Controller Error:",
       error,
     );
 
@@ -306,19 +53,9 @@ export async function updateProductController(
         ? error.message
         : "Something went wrong";
 
-    if (message === "Product not found") {
-      return NextResponse.json(
-        {
-          success: false,
-          message,
-        },
-        { status: 404 },
-      );
-    }
-
     if (
       message.includes(
-        "A product with this SKU already exists",
+        "A category with this name already exists",
       )
     ) {
       return NextResponse.json(
@@ -355,33 +92,87 @@ export async function updateProductController(
   }
 }
 
-
-export async function deleteProductController(
+export async function getCategoriesController(
   request: NextRequest,
-  productId: string,
 ) {
   try {
     const { organizationId } =
       await authenticateOrganization(request);
 
-    const product = await deleteProduct(
-      productId,
+    const { searchParams } =
+      new URL(request.url);
+
+    const page =
+      Number(searchParams.get("page")) || 1;
+
+    const limit =
+      Number(searchParams.get("limit")) || 10;
+
+    const search =
+      searchParams.get("search") || undefined;
+
+    const result = await getCategories(
+      organizationId,
+      {
+        page,
+        limit,
+        search,
+      },
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Categories fetched successfully",
+        data: result,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error(
+      "Get Categories Controller Error:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong",
+      },
+      { status: 401 },
+    );
+  }
+}
+
+export async function getCategoryByIdController(
+  request: NextRequest,
+  categoryId: string,
+) {
+  try {
+    const { organizationId } =
+      await authenticateOrganization(request);
+
+    const category = await getCategoryById(
+      categoryId,
       organizationId,
     );
 
     return NextResponse.json(
       {
         success: true,
-        message: "Product deleted successfully",
+        message: "Category fetched successfully",
         data: {
-          product,
+          category,
         },
       },
       { status: 200 },
     );
   } catch (error) {
     console.error(
-      "Delete Product Controller Error:",
+      "Get Category By ID Controller Error:",
       error,
     );
 
@@ -390,10 +181,177 @@ export async function deleteProductController(
         ? error.message
         : "Something went wrong";
 
+    if (message === "Category not found") {
+      return NextResponse.json(
+        {
+          success: false,
+          message,
+        },
+        { status: 404 },
+      );
+    }
+
     if (
-      message === "Product not found" ||
-      message === "Product is already inactive"
+      message.includes("Authorization") ||
+      message.includes("Token") ||
+      message.includes("organization") ||
+      message.includes("Organization")
     ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message,
+        },
+        { status: 401 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        message,
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function updateCategoryController(
+  request: NextRequest,
+  categoryId: string,
+) {
+  try {
+    const { organizationId } =
+      await authenticateOrganization(request);
+
+    const body = await request.json();
+
+    const validation =
+      updateCategorySchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Validation failed",
+          errors:
+            validation.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const category = await updateCategory(
+      categoryId,
+      validation.data,
+      organizationId,
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Category updated successfully",
+        data: {
+          category,
+        },
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error(
+      "Update Category Controller Error:",
+      error,
+    );
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Something went wrong";
+
+    if (message === "Category not found") {
+      return NextResponse.json(
+        {
+          success: false,
+          message,
+        },
+        { status: 404 },
+      );
+    }
+
+    if (
+      message.includes(
+        "A category with this name already exists",
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message,
+        },
+        { status: 409 },
+      );
+    }
+
+    if (
+      message.includes("Authorization") ||
+      message.includes("Token") ||
+      message.includes("organization") ||
+      message.includes("Organization")
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message,
+        },
+        { status: 401 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        message,
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function deleteCategoryController(
+  request: NextRequest,
+  categoryId: string,
+) {
+  try {
+    const { organizationId } =
+      await authenticateOrganization(request);
+
+    const category = await deleteCategory(
+      categoryId,
+      organizationId,
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Category deleted successfully",
+        data: {
+          category,
+        },
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error(
+      "Delete Category Controller Error:",
+      error,
+    );
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Something went wrong";
+
+    if (message === "Category not found") {
       return NextResponse.json(
         {
           success: false,

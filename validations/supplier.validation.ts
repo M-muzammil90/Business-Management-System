@@ -1,15 +1,14 @@
-
 import { z } from "zod";
 
 // =========================
-// CREATE CUSTOMER
+// CREATE SUPPLIER
 // =========================
 
-export const createCustomerSchema = z.object({
+export const createSupplierSchema = z.object({
   name: z
     .string()
-    .min(2, "Customer name must be at least 2 characters")
-    .max(100, "Customer name is too long")
+    .min(2, "Supplier name must be at least 2 characters")
+    .max(100, "Supplier name is too long")
     .trim(),
 
   email: z
@@ -22,6 +21,12 @@ export const createCustomerSchema = z.object({
   phone: z
     .string()
     .max(30, "Phone number is too long")
+    .trim()
+    .optional(),
+
+  companyName: z
+    .string()
+    .max(150, "Company name is too long")
     .trim()
     .optional(),
 
@@ -50,19 +55,19 @@ export const createCustomerSchema = z.object({
     .optional(),
 });
 
-export type CreateCustomerInput =
-  z.infer<typeof createCustomerSchema>;
+export type CreateSupplierInput =
+  z.infer<typeof createSupplierSchema>;
 
 
 // =========================
-// UPDATE CUSTOMER
+// UPDATE SUPPLIER
 // =========================
 
-export const updateCustomerSchema = z.object({
+export const updateSupplierSchema = z.object({
   name: z
     .string()
-    .min(2, "Customer name must be at least 2 characters")
-    .max(100, "Customer name is too long")
+    .min(2, "Supplier name must be at least 2 characters")
+    .max(100, "Supplier name is too long")
     .trim()
     .optional(),
 
@@ -76,6 +81,12 @@ export const updateCustomerSchema = z.object({
   phone: z
     .string()
     .max(30, "Phone number is too long")
+    .trim()
+    .optional(),
+
+  companyName: z
+    .string()
+    .max(150, "Company name is too long")
     .trim()
     .optional(),
 
@@ -108,6 +119,6 @@ export const updateCustomerSchema = z.object({
     .optional(),
 });
 
-export type UpdateCustomerInput =
-  z.infer<typeof updateCustomerSchema>;
+export type UpdateSupplierInput =
+  z.infer<typeof updateSupplierSchema>;
 

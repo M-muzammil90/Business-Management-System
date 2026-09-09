@@ -35,10 +35,13 @@ export const createProductSchema = z.object({
     .min(0, "Stock cannot be negative")
     .default(0),
 
-  category: z
-    .string()
-    .trim()
-    .optional(),
+  categoryId: z
+  .string()
+  .regex(
+    /^[0-9a-fA-F]{24}$/,
+    "Invalid category ID",
+  )
+  .optional(),
 
   image: z
     .string()
@@ -49,58 +52,37 @@ export const createProductSchema = z.object({
 export type CreateProductInput =
   z.infer<typeof createProductSchema>;
 
-  export const updateProductSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Product name must be at least 2 characters")
-    .max(150, "Product name is too long")
-    .trim()
-    .optional(),
+export const updateProductSchema = z.object({
+  name: z.string().min(2).max(150).trim().optional(),
 
-  sku: z
-    .string()
-    .min(2, "SKU is required")
-    .max(50, "SKU is too long")
-    .trim()
-    .toUpperCase()
-    .optional(),
+  sku: z.string().min(2).max(50).trim().toUpperCase().optional(),
 
-  description: z
-    .string()
-    .max(1000, "Description is too long")
-    .trim()
-    .optional(),
+  description: z.string().max(1000).trim().optional(),
 
-  price: z
-    .number()
-    .min(0, "Price cannot be negative")
-    .optional(),
+  price: z.number().min(0).optional(),
 
-  costPrice: z
-    .number()
-    .min(0, "Cost price cannot be negative")
-    .optional(),
+  costPrice: z.number().min(0).optional(),
 
   stock: z
     .number()
     .int("Stock must be a whole number")
-    .min(0, "Stock cannot be negative")
+    .min(0)
     .optional(),
 
-  category: z
+  // ✅ ADD THIS
+  categoryId: z
     .string()
-    .trim()
+    .regex(
+      /^[0-9a-fA-F]{24}$/,
+      "Invalid category ID",
+    )
     .optional(),
 
-  image: z
-    .string()
-    .url("Invalid image URL")
-    .optional(),
+  image: z.string().url("Invalid image URL").optional(),
 
-  isActive: z
-    .boolean()
-    .optional(),
+  isActive: z.boolean().optional(),
 });
 
 export type UpdateProductInput =
   z.infer<typeof updateProductSchema>;
+
