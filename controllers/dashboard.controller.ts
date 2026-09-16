@@ -5,7 +5,7 @@ import {
 
 import { DatabaseConnection } from "@/lib/db";
 
-import { authenticateOrganization } from "@/middleware/organization.middleware";
+import { authenticateAdmin } from "@/middleware/admin.middleware";
 
 import { getDashboardStats } from "@/services/dashboard.service";
 
@@ -15,8 +15,7 @@ export async function getDashboardStatsController(
   try {
     await DatabaseConnection();
 
-    const { organizationId } =
-      await authenticateOrganization(request);
+    const { organizationId } = await authenticateAdmin(request);
 
     const stats = await getDashboardStats(
       organizationId,

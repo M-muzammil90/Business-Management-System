@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
@@ -10,11 +11,29 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [collapsed, setCollapsed] =
     useState(false);
 
   const [mobileOpen, setMobileOpen] =
     useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    try {
+      const user = storedUser ? JSON.parse(storedUser) : null;
+
+      if (!token || user?.role !== "SUPER_ADMIN") {
+        router.replace("/auth/login");
+      }
+    } catch {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      router.replace("/auth/login");
+    }
+  }, [router]);
 
   // Escape key se mobile sidebar close
   useEffect(() => {

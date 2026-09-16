@@ -15,6 +15,19 @@ import {
   Sparkles,
   WalletCards,
 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { DashboardStats, SalesAnalytics } from "@/types/dashboard";
 
 interface ApiResponse<T> {
@@ -163,8 +176,32 @@ export default function DashboardPage() {
   }, [fetchDashboard]);
 
   const dailySales = analytics?.dailySales ?? [];
-  const maxSales = Math.max(...dailySales.map((item) => item.sales), 1);
-  const maxOrders = Math.max(...dailySales.map((item) => item.orders), 1);
+  const topProducts = analytics?.topProducts ?? [];
+  const monthlySales = analytics?.monthlySales ?? [];
+
+  const dailyChartData = useMemo(
+    () => dailySales.map((item) => ({ day: item._id.slice(5), sales: item.sales, orders: item.orders })),
+    [dailySales],
+  );
+  const topProductsChartData = useMemo(
+    () =>
+      [...topProducts]
+        .sort((left, right) => right.revenue - left.revenue)
+        .slice(0, 5)
+        .map((product) => ({
+          name: product.productName.length > 14 ? `${product.productName.slice(0, 14)}...` : product.productName,
+          revenue: product.revenue,
+        })),
+    [topProducts],
+  );
+  const monthlyChartData = useMemo(
+    () =>
+      monthlySales.map((item) => ({
+        month: `${item._id.month}/${String(item._id.year).slice(2)}`,
+        sales: item.sales,
+      })),
+    [monthlySales],
+  );
 
   const balance = data?.overview.totalSales ?? 0;
   const totalOrders = data?.overview.totalOrders ?? 0;
@@ -327,27 +364,26 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex h-64 items-end gap-2 border-b border-[#edf1ed] px-1">
-              {dailySales.length ? (
-                dailySales.map((item) => (
-                  <div key={item._id} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                    <div className="flex h-full w-full items-end justify-center gap-1">
-                      <div
-                        className="w-1/2 rounded-t-md bg-[#17463c]"
-                        style={{ height: `${Math.max((item.sales / maxSales) * 88, 5)}%` }}
-                        title={`Sales: ${money(item.sales)}`}
-                      />
-                      <div
-                        className="w-1/2 rounded-t-md bg-[#a8e96b]"
-                        style={{ height: `${Math.max((item.orders / maxOrders) * 55, 6)}%` }}
-                        title={`Orders: ${item.orders}`}
-                      />
-                    </div>
-                    <span className="text-[10px] text-[#91a49e]">{item._id.slice(5)}</span>
-                  </div>
-                ))
+            <div className="mt-8 h-64">
+              {dailyChartData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dailyChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="dashboardSalesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#17463c" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="#17463c" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} stroke="#e1eae0" strokeDasharray="3 3" />
+                    <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#8ca19a" }} />
+                    <YAxis hide />
+                    <Tooltip formatter={(value, name) => [name === "sales" ? money(Number(value)) : value, name === "sales" ? "Revenue" : "Orders"]} />
+                    <Area type="monotone" dataKey="sales" stroke="#17463c" strokeWidth={2.5} fill="url(#dashboardSalesGradient)" />
+                    <Area type="monotone" dataKey="orders" stroke="#a8e96b" strokeWidth={2} fill="transparent" />
+                  </AreaChart>
+                </ResponsiveContainer>
               ) : (
-                <p className="m-auto text-sm text-[#8ca19a]">No sales activity yet</p>
+                <div className="flex h-full items-center justify-center text-sm text-[#8ca19a]">No sales activity yet</div>
               )}
             </div>
           </div>
@@ -388,6 +424,51 @@ export default function DashboardPage() {
                 <Send className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </form>
+          </div>
+        </section>
+
+        <section className="grid gap-5 xl:grid-cols-2">
+          <div className={cardBase}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-[#204940]">Top products</p>
+                <p className="mt-1 text-xs text-[#8ca19a]">Revenue by best-selling product</p>
+              </div>
+              <Link href="/dashboard/analytics" className="text-xs font-semibold text-[#6da265] hover:underline">View analytics</Link>
+            </div>
+            {topProductsChartData.length ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={topProductsChartData} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid horizontal={false} stroke="#e1eae0" strokeDasharray="3 3" />
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" width={110} tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#78928a" }} />
+                  <Tooltip formatter={(value) => [money(Number(value)), "Revenue"]} />
+                  <Bar dataKey="revenue" fill="#17463c" radius={[0, 5, 5, 0]} barSize={18} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState label="No product sales yet." />
+            )}
+          </div>
+
+          <div className={cardBase}>
+            <div className="mb-4">
+              <p className="text-sm font-bold text-[#204940]">Monthly performance</p>
+              <p className="mt-1 text-xs text-[#8ca19a]">Revenue trend across the last 12 months</p>
+            </div>
+            {monthlyChartData.length ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={monthlyChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="#e1eae0" strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#78928a" }} />
+                  <YAxis hide />
+                  <Tooltip formatter={(value) => [money(Number(value)), "Revenue"]} />
+                  <Line type="monotone" dataKey="sales" stroke="#a8e96b" strokeWidth={3} dot={{ r: 3, fill: "#17463c" }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState label="No monthly sales data yet." />
+            )}
           </div>
         </section>
 
