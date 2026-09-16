@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { DatabaseConnection } from "@/lib/db";
 
 import {
   getSupplierByIdController,
@@ -14,6 +15,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await DatabaseConnection();
   const { id } = await params;
 
   return getSupplierByIdController(
@@ -30,6 +32,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await DatabaseConnection();
   const { id } = await params;
 
   return updateSupplierController(
@@ -46,6 +49,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await DatabaseConnection();
   const { id } = await params;
 
   return deleteSupplierController(

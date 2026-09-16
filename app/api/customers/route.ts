@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { DatabaseConnection } from "@/lib/db";
 
 import {
   createCustomerController,
@@ -10,6 +11,7 @@ import {
 // =========================
 
 export async function POST(request: NextRequest) {
+  await DatabaseConnection();
   return createCustomerController(request);
 }
 
@@ -18,6 +20,7 @@ export async function POST(request: NextRequest) {
 // =========================
 
 export async function GET(request: NextRequest) {
+  await DatabaseConnection();
   return getCustomersController(request);
 }
 
